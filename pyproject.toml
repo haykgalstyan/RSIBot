@@ -1,6 +1,14 @@
 [project]
 name = "rsibot"
 version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.9"
-dependencies = []
+description = "Python bot that pings me if crypto RSI looks interesting. [Learning Python Exercise]"
+requires-python = ">=3.12"
+dependencies = [
+    "black>=25.11.0",
+    "ccxt>=4.5.44",
+    "pandas>=2.3.3",
+    "pandas-ta>=0.4.71b0",
+]
+
+[tool.black]
+line-length = 80
