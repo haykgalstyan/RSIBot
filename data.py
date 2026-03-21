@@ -12,8 +12,6 @@ async def fetch_data(
     timeframe: str,
     limit: int = 100,
 ) -> pd.DataFrame | None:
-    await exchange.load_markets()
-
     try:
         data = await exchange.fetch_ohlcv(
             symbol=symbol,
