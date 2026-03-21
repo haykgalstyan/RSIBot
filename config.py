@@ -1,0 +1,4 @@
+FETCH_TIMEFRAME: str = "15m"
+RSI_LENGTH: int = 14
+DATA_LENGTH: int = RSI_LENGTH + 1
+SYMBOLS: list[str] = ["BTC/USDT", "ETH/USDT"]

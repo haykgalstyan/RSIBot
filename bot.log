@@ -1,0 +1,12 @@
+2026-03-21 17:06:20,613 | INFO | BTC/USDT RSI: <coroutine object fetch_rsi_for_symbol at 0x11192ad40>
+2026-03-21 17:06:20,616 | INFO | ETH/USDT RSI: <coroutine object fetch_rsi_for_symbol at 0x11192ae30>
+2026-03-21 17:06:54,340 | INFO | BTC/USDT RSI: 99    55.10395
+Name: rsi, dtype: float64
+2026-03-21 17:06:54,680 | INFO | ETH/USDT RSI: 99    53.568826
+Name: rsi, dtype: float64
+2026-03-21 17:20:21,041 | INFO | BTC/USDT RSI: 99    59.324626
+Name: rsi, dtype: float64
+2026-03-21 17:20:21,448 | INFO | ETH/USDT RSI: 99    56.688221
+Name: rsi, dtype: float64
+2026-03-21 17:24:33,369 | INFO | BTC/USDT RSI: 53.95838015018863
+2026-03-21 17:24:33,743 | INFO | ETH/USDT RSI: 48.93727616286206

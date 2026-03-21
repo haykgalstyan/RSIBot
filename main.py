@@ -1,61 +1,49 @@
-from typing import Optional
-
 import asyncio
 import ccxt.async_support as ccxt
-import pandas as pd
-import pandas_ta as ta
+from config import RSI_LENGTH, FETCH_TIMEFRAME, SYMBOLS
+from data import fetch_data
+from indicators import prepare_data, calculate_rsi, latest_rsi
+import logging
+from logging.handlers import RotatingFileHandler
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        RotatingFileHandler(
+            "bot.log", maxBytes=10 * 1024 * 1024, backupCount=10
+        ),
+        logging.StreamHandler(),  # still see stuff in console/ssh
+    ],
+)
+
+logger = logging.getLogger(__name__)
 
 binance: ccxt.Exchange = ccxt.binance({"enableRateLimit": True})
-fetch_timeframe = "15m"
 
 
-async def fetch_crypto_data(
-    exchange: ccxt.Exchange,
-    symbol: str,
-    timeframe: str,
-    limit: int = 100,
-) -> Optional[pd.DataFrame]:
-    async with exchange:
-        await exchange.load_markets()
+async def fetch_rsi_for_symbol(symbol) -> float | None:
+    data = await fetch_data(
+        exchange=binance,
+        symbol=symbol,
+        timeframe=FETCH_TIMEFRAME,
+        limit=RSI_LENGTH,
+    )
+    if data is None:
+        return None
 
-        print(f"Fetching data for {symbol}")
-        try:
-            data = await exchange.fetch_ohlcv(
-                symbol=symbol,
-                timeframe=timeframe,
-                limit=limit,
-            )
-        except Exception as e:
-            print(f"Error fetching data {e}")
-            return None
-
-        df = pd.DataFrame(
-            data,
-            columns=[
-                "timestamp",
-                "open",
-                "high",
-                "low",
-                "close",
-                "volume",
-            ],
-        )
-        return df
-
-
-async def calculate_rsi(
-    df: pd.DataFrame,
-    rsa_length: int = 14,
-) -> pd.Series:
-    df["ts"] = pd.to_datetime(df["timestamp"], unit="ms")
-    rsi = ta.rsi(df["close"], length=rsa_length)
+    rsi = data.pipe(prepare_data).pipe(calculate_rsi).pipe(latest_rsi)
     return rsi
 
 
 async def main():
-    data = await fetch_crypto_data(binance, "ETH/USDT", fetch_timeframe)
-    if data is not None:
-        rsi_data = await calculate_rsi(data)
-        print(rsi_data.tail(10))
+    try:
+        for symbol in SYMBOLS:
+            rsi = await fetch_rsi_for_symbol(symbol)
+            logger.info(f"{symbol} RSI: {rsi}")
+
+    finally:
+        await binance.close()
+
 
 asyncio.run(main())
