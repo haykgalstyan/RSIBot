@@ -1,6 +1,8 @@
 import pandas as pd
 import pandas_ta as ta
 
+from config import RSI_OVERSOLD, RSI_OVERBOUGHT
+
 
 def prepare_data(
     data: pd.DataFrame,
@@ -23,3 +25,9 @@ def latest_rsi(
     data: pd.DataFrame,
 ) -> float | None:
     return data.tail(1)["rsi"].item()
+
+
+def is_interesting_rsi(
+    rsi: float,
+) -> bool:
+    return rsi <= RSI_OVERSOLD or rsi >= RSI_OVERBOUGHT

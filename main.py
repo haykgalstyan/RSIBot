@@ -1,8 +1,24 @@
 import asyncio
 import ccxt.async_support as ccxt
-from config import DATA_LENGTH, RSI_LENGTH, FETCH_TIMEFRAME, SYMBOLS
+
+from alert import send_alert
+from config import (
+    DATA_LENGTH,
+    RSI_LENGTH,
+    DATA_TIMEFRAME,
+    SYMBOLS,
+    RSI_OVERSOLD,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    DATA_POLL_INTERVAL_SECONDS,
+)
 from data import fetch_data
-from indicators import prepare_data, calculate_rsi, latest_rsi
+from indicators import (
+    prepare_data,
+    calculate_rsi,
+    latest_rsi,
+    is_interesting_rsi,
+)
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -26,7 +42,7 @@ async def fetch_rsi_for_symbol(symbol) -> float | None:
     data = await fetch_data(
         exchange=binance,
         symbol=symbol,
-        timeframe=FETCH_TIMEFRAME,
+        timeframe=DATA_TIMEFRAME,
         limit=DATA_LENGTH,
     )
     if data is None:
@@ -46,14 +62,26 @@ async def fetch_rsi_for_symbol(symbol) -> float | None:
 
 
 async def main():
-    try:
-        await binance.load_markets()
-        for symbol in SYMBOLS:
-            rsi = await fetch_rsi_for_symbol(symbol)
-            logger.info(f"{symbol} RSI: {rsi}")
+    await binance.load_markets()
+    logger.info("🚀 Crypto RSI Watcher started")
+    while True:
+        try:
+            for symbol in SYMBOLS:
+                rsi = await fetch_rsi_for_symbol(symbol)
 
-    finally:
-        await binance.close()
+                logger.info(f"{symbol} RSI: {rsi}")
+
+                if is_interesting_rsi(rsi):
+                    message = f"🔥 {symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= RSI_OVERSOLD else 'OVERBOUGHT'}!"
+                    await send_alert(
+                        TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message
+                    )
+                    logger.info(f"📨 Alert sent for {symbol}")
+        except Exception as e:
+            logger.exception(e)
+        finally:
+            await binance.close()
+        await asyncio.sleep(DATA_POLL_INTERVAL_SECONDS)
 
 
 asyncio.run(main())
