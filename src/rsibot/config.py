@@ -1,29 +1,42 @@
-import os
-from dotenv import load_dotenv
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from typing import Any
 
-load_dotenv()
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_FILE = ROOT_DIR / ".env"
 
 
-# Market data and indicators
-DATA_TIMEFRAME: str = os.getenv("DATA_TIMEFRAME", "15m")  # candle size
-DATA_POLL_INTERVAL_SECONDS: int = 10
-RSI_LENGTH: int = int(os.getenv("RSI_LENGTH", "14"))
-DATA_LENGTH: int = RSI_LENGTH * 2
-SYMBOLS: list[str] = os.getenv("SYMBOLS", "BTC/USDT,ETH/USDT").split(",")
-
-# Alert thresholds
-RSI_OVERBOUGHT: float = 70.0
-RSI_OVERSOLD: float = 30.0
-
-# Alerts Config
-TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
-if not TELEGRAM_BOT_TOKEN:
-    raise ValueError(
-        "TELEGRAM_BOT_TOKEN is missing! Add it to .env or set as environment variable."
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_file_encoding="utf-8",
+        frozen=True,
+        populate_by_name=True,
+        alias_generator=lambda s: s.upper(),
+        extra="ignore",
     )
 
-TELEGRAM_CHAT_ID: int = int(os.getenv("TELEGRAM_CHAT_ID"))
-if TELEGRAM_CHAT_ID == 0:
-    raise ValueError(
-        "TELEGRAM_CHAT_ID is missing! Add it to .env or set as environment variable."
+    # Market data & indicators
+    symbols: list[str] = Field(
+        default_factory=lambda: ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
     )
+    data_poll_interval_seconds: int = Field(default=10, ge=5)
+    data_timeframe: str = Field(default="15m")
+    data_length: int = Field(default=120)
+    rsi_length: int = Field(default=14, ge=7)
+
+    # Alert thresholds
+    rsi_overbought: float = Field(default=70.0)
+    rsi_oversold: float = Field(default=30.0)
+
+    # Telegram config
+    telegram_bot_token: str = Field(default=...)
+    telegram_chat_id: int = Field(default=...)
+
+    @field_validator("symbols", mode="before")
+    @classmethod
+    def parse_symbols(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v

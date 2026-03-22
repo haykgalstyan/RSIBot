@@ -12,27 +12,18 @@ logging.basicConfig(
     ],
 )
 
+
 import asyncio
 import ccxt.async_support as ccxt
 
+
+from rsibot.config import Settings
 from rsibot.alert import send_alert
-from rsibot.config import (
-    DATA_LENGTH,
-    RSI_LENGTH,
-    DATA_TIMEFRAME,
-    SYMBOLS,
-    RSI_OVERSOLD,
-    RSI_OVERBOUGHT,
-    TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CHAT_ID,
-    DATA_POLL_INTERVAL_SECONDS,
-)
 from rsibot.data import fetch_data
 from rsibot.indicators import (
     prepare_data,
     calculate_rsi,
     latest_rsi,
-    is_interesting_rsi,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,12 +31,15 @@ logger = logging.getLogger(__name__)
 binance: ccxt.Exchange = ccxt.binance({"enableRateLimit": True})
 
 
-async def fetch_rsi_for_symbol(symbol) -> float | None:
+async def fetch_rsi_for_symbol(
+    symbol: str,
+    settings: Settings,
+) -> float | None:
     data = await fetch_data(
         exchange=binance,
         symbol=symbol,
-        timeframe=DATA_TIMEFRAME,
-        limit=DATA_LENGTH,
+        timeframe=settings.data_timeframe,
+        limit=settings.data_length,
     )
     if data is None:
         logger.error(f"No data found for {symbol}")
@@ -55,38 +49,52 @@ async def fetch_rsi_for_symbol(symbol) -> float | None:
         data.pipe(prepare_data)
         .pipe(
             calculate_rsi,
-            rsi_length=RSI_LENGTH,
+            rsi_length=settings.rsi_length,
         )
         .pipe(latest_rsi)
     )
     return rsi
 
 
-async def start_polling():
+async def start_polling(
+    settings: Settings,
+):
     while True:
         try:
-            for symbol in SYMBOLS:
-                rsi = await fetch_rsi_for_symbol(symbol)
+            for symbol in settings.symbols:
+                rsi = await fetch_rsi_for_symbol(symbol, settings)
                 logger.info(f"{symbol} RSI: {rsi}")
-                if is_interesting_rsi(rsi):
-                    await alert(rsi, symbol)
+                if (
+                    rsi <= settings.rsi_oversold
+                    or rsi >= settings.rsi_overbought
+                ):
+                    await alert(rsi, symbol, settings)
         except Exception as e:
             logger.exception(e)
 
-        await asyncio.sleep(DATA_POLL_INTERVAL_SECONDS)
+        await asyncio.sleep(settings.data_poll_interval_seconds)
 
 
-async def alert(rsi: float | None, symbol: str):
-    message = f"{symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= RSI_OVERSOLD else 'OVERBOUGHT'}!"
-    await send_alert(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
+async def alert(
+    rsi: float | None,
+    symbol: str,
+    settings: Settings,
+):
+    message = f"{symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= settings.rsi_oversold else 'OVERBOUGHT'}!"
+    await send_alert(
+        token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
+        text=message,
+    )
     logger.info(f"Alert sent for {symbol}")
 
 
 async def main():
     try:
+        settings = Settings()
         await binance.load_markets()
         logger.info("Started")
-        await start_polling()
+        await start_polling(settings)
     finally:
         await binance.close()
 
