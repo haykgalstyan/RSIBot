@@ -6,7 +6,7 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
     handlers=[
         RotatingFileHandler(
-            "bot.log", maxBytes=10 * 1024 * 1024, backupCount=10
+            "../../bot.log", maxBytes=10 * 1024 * 1024, backupCount=10
         ),
         logging.StreamHandler(),  # still see stuff in console/ssh
     ],
@@ -15,8 +15,8 @@ logging.basicConfig(
 import asyncio
 import ccxt.async_support as ccxt
 
-from alert import send_alert
-from config import (
+from rsibot.alert import send_alert
+from rsibot.config import (
     DATA_LENGTH,
     RSI_LENGTH,
     DATA_TIMEFRAME,
@@ -27,8 +27,8 @@ from config import (
     TELEGRAM_CHAT_ID,
     DATA_POLL_INTERVAL_SECONDS,
 )
-from data import fetch_data
-from indicators import (
+from rsibot.data import fetch_data
+from rsibot.indicators import (
     prepare_data,
     calculate_rsi,
     latest_rsi,

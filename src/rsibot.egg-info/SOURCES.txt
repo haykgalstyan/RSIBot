@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+src/rsibot/__init__.py
+src/rsibot/alert.py
+src/rsibot/bot.py
+src/rsibot/config.py
+src/rsibot/data.py
+src/rsibot/indicators.py
+src/rsibot/main.py
+src/rsibot.egg-info/PKG-INFO
+src/rsibot.egg-info/SOURCES.txt
+src/rsibot.egg-info/dependency_links.txt
+src/rsibot.egg-info/requires.txt
+src/rsibot.egg-info/top_level.txt

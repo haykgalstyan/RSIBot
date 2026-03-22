@@ -1,7 +1,7 @@
 import pandas as pd
 import pandas_ta as ta
 
-from config import RSI_OVERSOLD, RSI_OVERBOUGHT
+from rsibot.config import RSI_OVERSOLD, RSI_OVERBOUGHT
 
 
 def prepare_data(
