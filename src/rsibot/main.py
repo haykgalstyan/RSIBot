@@ -1,12 +1,17 @@
 import logging
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
+from rsibot.bot import RSIBot
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
     handlers=[
         RotatingFileHandler(
-            "../../bot.log", maxBytes=10 * 1024 * 1024, backupCount=10
+            Path(__file__).resolve().parent.parent.parent / "bot.log",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=10,
         ),
         logging.StreamHandler(),  # still see stuff in console/ssh
     ],
@@ -32,11 +37,12 @@ binance: ccxt.Exchange = ccxt.binance({"enableRateLimit": True})
 
 
 async def fetch_rsi_for_symbol(
+    exchange: ccxt.Exchange,
     symbol: str,
     settings: Settings,
 ) -> float | None:
     data = await fetch_data(
-        exchange=binance,
+        exchange=exchange,
         symbol=symbol,
         timeframe=settings.data_timeframe,
         limit=settings.data_length,
@@ -57,46 +63,56 @@ async def fetch_rsi_for_symbol(
 
 
 async def start_polling(
-    settings: Settings,
+    bot: RSIBot,
 ):
     while True:
         try:
-            for symbol in settings.symbols:
-                rsi = await fetch_rsi_for_symbol(symbol, settings)
+            async with asyncio.TaskGroup() as tg:
+                tasks = [
+                    tg.create_task(
+                        fetch_rsi_for_symbol(bot.exchange, symbol, bot.settings)
+                    )
+                    for symbol in bot.settings.symbols
+                ]
+            # Results in original symbol order (TaskGroup magic)
+            for symbol, task in zip(bot.settings.symbols, tasks):
+                rsi = task.result()
                 logger.info(f"{symbol} RSI: {rsi}")
+
+                if rsi is None:
+                    continue
+
                 if (
-                    rsi <= settings.rsi_oversold
-                    or rsi >= settings.rsi_overbought
+                    rsi <= bot.settings.rsi_oversold
+                    or rsi >= bot.settings.rsi_overbought
                 ):
-                    await alert(rsi, symbol, settings)
-        except Exception as e:
+                    await alert(rsi, symbol, bot)
+
+        except Exception as e:  # TaskGroup already handled cancellation
             logger.exception(e)
 
-        await asyncio.sleep(settings.data_poll_interval_seconds)
+        await asyncio.sleep(bot.settings.data_poll_interval_seconds)
 
 
-async def alert(
-    rsi: float | None,
-    symbol: str,
-    settings: Settings,
-):
-    message = f"{symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= settings.rsi_oversold else 'OVERBOUGHT'}!"
-    await send_alert(
-        token=settings.telegram_bot_token,
-        chat_id=settings.telegram_chat_id,
-        text=message,
-    )
+async def alert(rsi: float, symbol: str, bot: RSIBot):
+    direction = "OVERSOLD" if rsi <= bot.settings.rsi_oversold else "OVERBOUGHT"
+    message = f"{symbol} RSI: {rsi:.1f} {direction}!"
+
+    await bot.send_alert(message)
     logger.info(f"Alert sent for {symbol}")
 
 
-async def main():
-    try:
-        settings = Settings()
-        await binance.load_markets()
-        logger.info("Started")
-        await start_polling(settings)
-    finally:
-        await binance.close()
+async def main() -> None:
+    """Dependency-injected, context-managed, zero globals. This is how adults code."""
+    settings = Settings()
+    async with RSIBot(settings) as bot:
+        logger.info("RSIBot started successfully. Markets loaded.")
+        await start_polling(bot)
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except (KeyboardInterrupt, SystemExit):
+    logger.info("Stopped Gracefully")
+except Exception as e:
+    logger.exception("Unexpected death")
