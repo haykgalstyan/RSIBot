@@ -1,24 +1,3 @@
-import asyncio
-import ccxt.async_support as ccxt
-
-from alert import send_alert
-from config import (
-    DATA_LENGTH,
-    RSI_LENGTH,
-    DATA_TIMEFRAME,
-    SYMBOLS,
-    RSI_OVERSOLD,
-    TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CHAT_ID,
-    DATA_POLL_INTERVAL_SECONDS,
-)
-from data import fetch_data
-from indicators import (
-    prepare_data,
-    calculate_rsi,
-    latest_rsi,
-    is_interesting_rsi,
-)
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -31,6 +10,29 @@ logging.basicConfig(
         ),
         logging.StreamHandler(),  # still see stuff in console/ssh
     ],
+)
+
+import asyncio
+import ccxt.async_support as ccxt
+
+from alert import send_alert
+from config import (
+    DATA_LENGTH,
+    RSI_LENGTH,
+    DATA_TIMEFRAME,
+    SYMBOLS,
+    RSI_OVERSOLD,
+    RSI_OVERBOUGHT,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    DATA_POLL_INTERVAL_SECONDS,
+)
+from data import fetch_data
+from indicators import (
+    prepare_data,
+    calculate_rsi,
+    latest_rsi,
+    is_interesting_rsi,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,31 +59,36 @@ async def fetch_rsi_for_symbol(symbol) -> float | None:
         )
         .pipe(latest_rsi)
     )
-
     return rsi
 
 
-async def main():
-    await binance.load_markets()
-    logger.info("🚀 Crypto RSI Watcher started")
+async def start_polling():
     while True:
         try:
             for symbol in SYMBOLS:
                 rsi = await fetch_rsi_for_symbol(symbol)
-
                 logger.info(f"{symbol} RSI: {rsi}")
-
                 if is_interesting_rsi(rsi):
-                    message = f"🔥 {symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= RSI_OVERSOLD else 'OVERBOUGHT'}!"
-                    await send_alert(
-                        TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message
-                    )
-                    logger.info(f"📨 Alert sent for {symbol}")
+                    await alert(rsi, symbol)
         except Exception as e:
             logger.exception(e)
-        finally:
-            await binance.close()
+
         await asyncio.sleep(DATA_POLL_INTERVAL_SECONDS)
+
+
+async def alert(rsi: float | None, symbol: str):
+    message = f"{symbol} RSI is {rsi:.1f} — {'OVERSOLD' if rsi <= RSI_OVERSOLD else 'OVERBOUGHT'}!"
+    await send_alert(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
+    logger.info(f"Alert sent for {symbol}")
+
+
+async def main():
+    try:
+        await binance.load_markets()
+        logger.info("Started")
+        await start_polling()
+    finally:
+        await binance.close()
 
 
 asyncio.run(main())

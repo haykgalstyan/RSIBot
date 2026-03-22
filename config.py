@@ -6,7 +6,7 @@ load_dotenv()
 
 # Market data and indicators
 DATA_TIMEFRAME: str = os.getenv("FETCH_TIMEFRAME", "15m")  # candle size
-DATA_POLL_INTERVAL_SECONDS: int = 30
+DATA_POLL_INTERVAL_SECONDS: int = 10
 RSI_LENGTH: int = int(os.getenv("RSI_LENGTH", "14"))
 DATA_LENGTH: int = RSI_LENGTH * 2
 SYMBOLS: list[str] = os.getenv("SYMBOLS", "BTC/USDT,ETH/USDT").split(",")
