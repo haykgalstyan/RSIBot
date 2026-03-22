@@ -4,13 +4,19 @@ version = "0.1.0"
 description = "Python bot that pings me if crypto RSI looks interesting. [Learning Python Exercise]"
 requires-python = ">=3.12"
 dependencies = [
-    "black>=25.11.0",
     "ccxt>=4.5.44",
     "pandas>=2.3.3",
     "pandas-ta>=0.4.71b0",
     "aiogram>=3.26.0",
     "python-dotenv>=1.2.2",
     "pydantic-settings>=2.13.1",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "ruff>=0.15.7",
+    "ty>=0.0.24",
 ]
 
 [build-system]
@@ -20,5 +26,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.black]
-line-length = 80
+
+[tool.ruff]
+#line-length = 88
+#target-version = "py312"
+
+[tool.ruff.format]
+#skip-magic-trailing-comma = false
+#quote-style = "double"
+
+

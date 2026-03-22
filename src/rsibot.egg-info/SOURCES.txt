@@ -1,7 +1,6 @@
 README.md
 pyproject.toml
 src/rsibot/__init__.py
-src/rsibot/alert.py
 src/rsibot/bot.py
 src/rsibot/config.py
 src/rsibot/data.py

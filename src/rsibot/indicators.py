@@ -22,4 +22,6 @@ def calculate_rsi(
 def latest_rsi(
     data: pd.DataFrame,
 ) -> float | None:
-    return data.tail(1)["rsi"].item()
+    if data.empty or "rsi" not in data.columns:
+        return None
+    return data["rsi"].iloc[-1]

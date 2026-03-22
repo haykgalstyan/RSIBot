@@ -3,7 +3,6 @@ Name: rsibot
 Version: 0.1.0
 Summary: Python bot that pings me if crypto RSI looks interesting. [Learning Python Exercise]
 Requires-Python: >=3.12
-Requires-Dist: black>=25.11.0
 Requires-Dist: ccxt>=4.5.44
 Requires-Dist: pandas>=2.3.3
 Requires-Dist: pandas-ta>=0.4.71b0

@@ -23,7 +23,6 @@ import ccxt.async_support as ccxt
 
 
 from rsibot.config import Settings
-from rsibot.alert import send_alert
 from rsibot.data import fetch_data
 from rsibot.indicators import (
     prepare_data,
@@ -32,8 +31,6 @@ from rsibot.indicators import (
 )
 
 logger = logging.getLogger(__name__)
-
-binance: ccxt.Exchange = ccxt.binance({"enableRateLimit": True})
 
 
 async def fetch_rsi_for_symbol(
@@ -103,7 +100,6 @@ async def alert(rsi: float, symbol: str, bot: RSIBot):
 
 
 async def main() -> None:
-    """Dependency-injected, context-managed, zero globals. This is how adults code."""
     settings = Settings()
     async with RSIBot(settings) as bot:
         logger.info("RSIBot started successfully. Markets loaded.")
