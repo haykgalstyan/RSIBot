@@ -59,21 +59,23 @@ async def fetch_rsi_for_symbol(
     return rsi
 
 
-async def start_polling(
-    bot: RSIBot,
-):
+async def start_polling(bot: RSIBot):
     while True:
         try:
-            async with asyncio.TaskGroup() as tg:
-                tasks = [
-                    tg.create_task(
-                        fetch_rsi_for_symbol(bot.exchange, symbol, bot.settings)
-                    )
+            results = await asyncio.gather(
+                *[
+                    fetch_rsi_for_symbol(bot.exchange, symbol, bot.settings)
                     for symbol in bot.settings.symbols
-                ]
-            # Results in original symbol order (TaskGroup magic)
-            for symbol, task in zip(bot.settings.symbols, tasks):
-                rsi = task.result()
+                ],
+                return_exceptions=True,
+            )
+
+            for symbol, result in zip(bot.settings.symbols, results):
+                if isinstance(result, Exception):
+                    logger.error(f"{symbol} failed: {result}")
+                    continue
+
+                rsi = result
                 logger.info(f"{symbol} RSI: {rsi}")
 
                 if rsi is None:
@@ -85,7 +87,7 @@ async def start_polling(
                 ):
                     await alert(rsi, symbol, bot)
 
-        except Exception as e:  # TaskGroup already handled cancellation
+        except Exception as e:
             logger.exception(e)
 
         await asyncio.sleep(bot.settings.data_poll_interval_seconds)
