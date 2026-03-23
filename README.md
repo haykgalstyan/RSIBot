@@ -1,9 +1,38 @@
 # RSIBot
 
-RSI watcher bot for Binance that pings you on Telegram when RSI goes overbought/oversold.
+RSI watcher bot for Binance that pings you on Telegram when crypto goes
+overbought/oversold.
 
-## Setup
+## Install
 
-1. `uv sync`
-2. `cp .env.example .env` and fill in your `TELEGRAM_TOKEN` + `CHAT_ID`
-3. `uv run python -m rsibot.main`
+### Docker
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+### Update
+
+```bash
+git pull && docker compose up -d --build
+```
+
+### Local
+
+```bash
+uv sync
+cp .env.example .env
+uv run python -m rsibot.main
+```
+
+### Configuration
+
+Edit `.env`:
+
+```
+TELEGRAM_BOT_TOKEN=your_token
+TELEGRAM_CHAT_ID=your_chat_id
+SYMBOLS=BTC/USDT,ETH/USDT,SOL/USDT
+Optional: RSI_OVERBOUGHT, RSI_OVERSOLD, DATA_TIMEFRAME
+```
