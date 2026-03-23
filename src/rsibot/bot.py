@@ -1,7 +1,9 @@
-from aiogram import Bot
-import ccxt.async_support as ccxt
-from .config import Settings
 import logging
+
+import ccxt.async_support as ccxt
+from aiogram import Bot
+
+from .config import Settings
 
 logger = logging.getLogger(__name__)
 

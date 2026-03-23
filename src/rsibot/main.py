@@ -1,17 +1,17 @@
+import asyncio
 import logging
 
-import asyncio
 import ccxt.async_support as ccxt
 
+from rsibot.bot import RSIBot
 from rsibot.config import Settings
-from rsibot.logger import configure_logger
 from rsibot.data import fetch_data
 from rsibot.indicators import (
-    prepare_data,
     calculate_rsi,
     latest_rsi,
+    prepare_data,
 )
-from rsibot.bot import RSIBot
+from rsibot.logger import configure_logger
 
 configure_logger()
 logger = logging.getLogger(__name__)
@@ -54,7 +54,9 @@ async def start_polling(bot: RSIBot):
                 return_exceptions=True,
             )
 
-            for symbol, result in zip(bot.settings.symbols, results):
+            for symbol, result in zip(
+                bot.settings.symbols, results, strict=True
+            ):
                 if isinstance(result, Exception):
                     logger.error(f"{symbol} failed: {result}")
                     continue
@@ -96,5 +98,5 @@ try:
     asyncio.run(main())
 except (KeyboardInterrupt, SystemExit):
     logger.info("Stopped Gracefully")
-except Exception as e:
+except Exception:
     logger.exception("Unexpected death")

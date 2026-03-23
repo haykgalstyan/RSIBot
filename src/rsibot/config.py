@@ -1,7 +1,8 @@
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
 from typing import Any
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE = ROOT_DIR / ".env"
