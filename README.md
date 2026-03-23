@@ -3,6 +3,8 @@
 RSI watcher bot for Binance that pings you on Telegram when crypto goes
 overbought/oversold.
 
+*(I wrote this to learn python, use at your own risk)*
+
 ## Install
 
 ### Docker
