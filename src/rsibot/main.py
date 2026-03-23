@@ -1,35 +1,19 @@
 import logging
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-
-from rsibot.bot import RSIBot
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        RotatingFileHandler(
-            Path(__file__).resolve().parent.parent.parent / "bot.log",
-            maxBytes=10 * 1024 * 1024,
-            backupCount=10,
-        ),
-        logging.StreamHandler(),  # still see stuff in console/ssh
-    ],
-)
-
 
 import asyncio
 import ccxt.async_support as ccxt
 
-
 from rsibot.config import Settings
+from rsibot.logger import configure_logger
 from rsibot.data import fetch_data
 from rsibot.indicators import (
     prepare_data,
     calculate_rsi,
     latest_rsi,
 )
+from rsibot.bot import RSIBot
 
+configure_logger()
 logger = logging.getLogger(__name__)
 
 
