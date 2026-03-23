@@ -12,7 +12,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-### Update
+#### Update
 
 ```bash
 git pull && docker compose up -d --build
