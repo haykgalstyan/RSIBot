@@ -38,3 +38,9 @@ TELEGRAM_CHAT_ID=your_chat_id
 SYMBOLS=BTC/USDT,ETH/USDT,SOL/USDT
 Optional: RSI_OVERBOUGHT, RSI_OVERSOLD, DATA_TIMEFRAME
 ```
+
+### Checking logs
+
+```bash
+docker compose logs -f
+```
